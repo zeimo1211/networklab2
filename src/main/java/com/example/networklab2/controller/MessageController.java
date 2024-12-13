@@ -6,10 +6,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @RestController
 @CrossOrigin(origins = "*") // 允许所有来源
@@ -32,11 +29,22 @@ public class MessageController {
         System.out.println("调用getMessages方法");
         System.out.println("userid: " + userid + ", friendid: " + friendid);
         String key = generateKey(userid, friendid);
+        String key2=generateKey(friendid,userid);
 
         List<Message> messages = messageStore.get(key);
+        List<Message> messages2=messageStore.get(key2);
+
         if (messages == null) {
             messages = new ArrayList<>();
         }
+        if(messages2!=null){
+            messages.addAll(messages2);
+        }
+
+        //根据时间进行排序
+        // 按时间戳排序
+        Collections.sort(messages, Comparator.comparing(m -> LocalDateTime.parse(m.timestamp)));
+
         return messages;
     }
 
