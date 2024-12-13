@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>聊天系统</title>
+</head>
+
+<body>
+
+  <div id="loginPage">
+    <h2>登录</h2>
+    <input type="text" id="username" placeholder="用户名" required>
+    <input type="password" id="password" placeholder="密码" required>
+    <button onclick="login()">登录</button>
+  </div>
+
+  <div id="chatPage" style="display: none;">
+    <h2>欢迎， <span id="userNameDisplay"></span></h2>
+    <div id="userList" class="user-list">
+      <h3>好友列表</h3>
+      <!-- 用户列表会在这里动态加载 -->
+    </div>
+    <div id="chatContainer">
+      <div id="messages" class="message-container">
+        <!-- 聊天记录显示区域 -->
+      </div>
+      <input type="text" id="messageInput" placeholder="输入消息..." onkeydown="if(event.key === 'Enter'){sendMessage()}">
+      <button onclick="sendMessage()">发送消息</button>
+    </div>
+  </div>
+
+  <script>
+    let currentUser = null;
+    let selectedUser = null;
+
+    // 登录函数
+    function login() {
+      const username = document.getElementById('username').value;
+      const password = document.getElementById('password').value;
+      const requestData = {
+        username: username,
+        password: password
+      };
+
+      fetch('http://localhost:1207/api/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestData),
+      })
+        .then(response => {
+          if (!response.ok) {
+            throw new Error('网络响应错误，状态码：' + response.status);
+          }
+          return response.json();
+        })
+        .then(data => {
+          if (data.success) {
+            currentUser = data.user;
+            document.getElementById('loginPage').style.display = 'none';
+            document.getElementById('chatPage').style.display = 'block';
+            document.getElementById('userNameDisplay').innerText = currentUser.username;
+            fetchFriends();  // Fetch the friend list after login
+          } else {
+            alert(data.message);
+          }
+        })
+        .catch(error => alert('登录失败: ' + error));
+    }
+
+    // 获取好友列表
+    function fetchFriends() {
+      fetch('http://localhost:1207/api/users')
+        .then(response => response.json())
+        .then(users => {
+          const userList = document.getElementById('userList');
+          userList.innerHTML = ''; // 清空原来的列表
+
+          users.forEach(user => {
+            if (user.username !== currentUser.username) {  // 排除当前用户
+              const userItem = document.createElement('div');
+              userItem.classList.add('user-item');
+              userItem.textContent = user.username;
+              userItem.onclick = () => selectUser(user);
+              userList.appendChild(userItem);
+            }
+          });
+        })
+        .catch(error => alert('获取用户列表失败: ' + error));
+    }
+
+    // 选择好友开始对话
+    function selectUser(user) {
+      selectedUser = user;
+      document.getElementById('messages').innerHTML = ''; // 清空消息区域
+      fetchMessages(); // 获取与该用户的聊天记录
+    }
+
+    // 获取消息记录
+    function fetchMessages() {
+      const userid = currentUser.username;
+      const friendid = selectedUser.username;
+
+      fetch(`http://localhost:1207/api/messages?userid=${userid}&friendid=${friendid}`)
+        .then(response => response.json())
+        .then(messages => {
+          const messagesContainer = document.getElementById('messages');
+          messagesContainer.innerHTML = ''; // 清空消息区域
+
+          messages.forEach(message => {
+            const messageDiv = document.createElement('div');
+            messageDiv.classList.add('message');
+            messageDiv.innerHTML = `<span class="sender">${message.sender}</span>: ${message.text} <small>(${message.timestamp})</small>`;
+            messagesContainer.appendChild(messageDiv);
+          });
+        })
+        .catch(error => alert('获取消息失败: ' + error));
+    }
+
+    // 发送消息
+    function sendMessage() {
+      const messageText = document.getElementById('messageInput').value;
+      if (!messageText) return;
+
+      fetch('http://localhost:1207/api/sendMessage', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          sender: currentUser.username,
+          receiver: selectedUser.username,
+          text: messageText,
+        }),
+      })
+        .then(response => {
+          if (response.ok) {  // 检查是否发送成功
+            document.getElementById('messageInput').value = ''; // 清空输入框
+            fetchMessages(); // 刷新消息列表
+          } else {
+            throw new Error('消息发送失败，状态码: ' + response.status);
+          }
+        })
+        .catch(error => {
+          alert('消息发送失败: ' + error.message);
+        });
+    }
+
+
+  </script>
+
+</body>
+
+</html>

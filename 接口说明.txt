@@ -1,0 +1,87 @@
+http://localhost:1207
+登录接口：
+
+URL: /api/login
+方法: POST
+请求体:
+json
+{
+  "username": "zeimo",
+  "password": "123456"
+}
+响应:
+json
+{
+  "success": true,
+  "user": {
+    "id": "number",
+    "username": "string"
+  },
+  "message": "string (if failed)"
+}
+错误示例：
+{
+    "success": false,
+    "message": "Invalid username or password."
+}
+
+获取用户列表接口
+
+URL: /api/users
+方法: GET
+响应:
+json
+[
+    {
+        "id": 1,
+        "username": "zeimo"
+    },
+    {
+        "id": 2,
+        "username": "ckj"
+    }
+]
+
+
+获取消息接口
+
+URL: /api/messages
+方法: GET
+查询参数:示例：
+http://localhost:1207/api/messages?userid=zeimo&friendid=ckj
+
+其中userid为用户的id，friendid为当前聊天的对象的id，用于获取两者之间的聊天记录。
+响应:
+json
+
+[
+{
+"receiver":"ckj",
+"sender":"zeimo",
+"text":"你好，我是zeimo",
+"timestamp":"2024-12-09T10:00:00"
+},
+{
+"receiver":"zeimo",
+"sender":"ckj",
+"text":"你好，我是ckj",
+"timestamp":"2024-12-09T10:05:00"
+}
+]
+
+
+发送消息接口
+
+URL: /api/sendMessage
+方法: POST
+请求体:
+json
+
+{
+   "sender":"zeimo",
+  "receiver": "ckj",
+  "text": "你好呀，我们来聊天吧"
+}
+响应:
+无
+
